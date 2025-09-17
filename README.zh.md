@@ -2,7 +2,7 @@
 > 让任何仓库的文档体验从“能用”直接跃迁到“秒懂”
 
 DeepWiki-Plus 是在原 DeepWiki 基础上的**代码级深度增强版**。  
-我们保留了“一键生成美观 Wiki”的全部能力，并在 LLM 生成文档之前插入了两步**预解析**与**预总结**流程，使最终 Wiki 的准确率、可读性、可维护性都得到 2~3 倍提升（内部 50 个开源仓库盲测结果）。
+我们保留了“一键生成美观 Wiki”的全部能力，并在 LLM 生成文档之前插入了两步**预解析**与**预总结**流程，使最终 Wiki 的准确率、可读性、可维护性都得到 提升。
 
 ---
 
@@ -11,9 +11,9 @@ DeepWiki-Plus 是在原 DeepWiki 基础上的**代码级深度增强版**。
 | 步骤 | 原 DeepWiki | DeepWiki-Plus |
 |---|---|---|
 | ① 代码获取 | 直接克隆 | 克隆 + **轻量级静态分析** |
-| ② 语义提取 | 无 | **AST 级解析**：类、函数签名、返回值、import 关系、调用链 |
+| ② 语义提取 | 无 | **代码解析**：类、函数签名、返回值、import 关系、调用链 |
 | ③ 预总结 | 无 | **LLM 二次总结**：模块职责 + 调用链图谱（Mermaid） |
-| ④ 生成 Wiki | 仅原始代码上下文 | 带上**预总结结果**再提问，LLM 答案准确率↑39%，幻觉↓57% |
+| ④ 生成 Wiki | 仅原始代码上下文 | 带上**预总结结果**再提问，LLM 答案准确率↑，幻觉↓ |
 | ⑤ 问答 / 深度研究 | RAG 仅 Embedding | RAG + 预总结双重检索，**复杂调用链问题**也能秒回 |
 
 ---
@@ -34,57 +34,60 @@ DeepWiki-Plus 是在原 DeepWiki 基础上的**代码级深度增强版**。
 
 ---
 
-## 🚀 30 秒快速体验
+## 🚀 30 秒快速体验（如阿里巴巴 Qwen）
 
 ```bash
 # 1. 克隆 DeepWiki-Plus
-git clone https://github.com/<你>/deepwiki-plus.git && cd deepwiki-plus
+git clone https://github.com/H-Z-Ning/deepwiki-plus.git && cd deepwiki-plus
 
 # 2. 填写密钥（支持多模型）
-cat <<EOF > .env
-GOOGLE_API_KEY=xxx
-OPENAI_API_KEY=xxx
-# 可选
-OPENROUTER_API_KEY=xxx
-OLLAMA_HOST=http://127.0.0.1:11434
-EOF
+vi .env
+   ```
+   GOOGLE_API_KEY=你的_api_key
+   OPENAI_API_KEY=你的_api_key
+   OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+   OPENAI_MODEL=qwen-turbo
+   ```
 
-# 3. 一键启动（自带预解析服务）
-docker compose up -d
-# 或
+# 3.用 `api/config/embedder_openai_compatible.json` 的内容替换 `api/config/embedder.json`。
+
+# 4. 一键启动（自带预解析服务）
 npm run dev          # 前端
 python -m api.main   # 后端（含预解析 Worker）
+
+# 5.前端模型选择
+ 在前端选用(1)模型提供商为：Openai；(2)勾选自定义模型；(3)模型选择填写为：qwen-turbo
 ```
 
 浏览器打开 http://localhost:3000  
 输入仓库地址 → 勾选 **“启用深度预解析”** → 1~3 分钟后即可收获**带调用链**的完整 Wiki！
 
----
-
-## 📊 效果对比（同一份代码）
-
-| 指标 | DeepWiki | DeepWiki-Plus |
-|---|---|---|
-| 模块职责缺失率 | 37 % | **5 %** |
-| 调用链错误/遗漏 | 22 % | **3 %** |
-| 问答幻觉率 | 19 % | **4 %** |
-| 生成耗时 | 1.2× | 1×（增量后 0.3×） |
 
 ---
 
 ## 🛠️ 架构升级
 
 ```
-deepwiki-plus/
-├─ api/
-│  ├─ main.py            # FastAPI 入口
-│  ├─ parser/            # 新增：AST 预解析引擎
-│  ├─ summarizer/        # 新增：LLM 预总结服务
-│  └─ rag.py             # 强化：双重检索（Embedding + 预总结）
-├─ worker/               # 新增：可横向扩展的解析队列
-├─ src/
-│  └─ components/CallMap.tsx  # 调用链可视化
-└─ docker-compose.yml    # 一键编排
+deepwiki/
+├── api/                  # 后端API服务器
+│   ├── main.py           # API入口点
+│   ├── api.py            # FastAPI实现
+│   ├── rag.py            # 检索增强生成
+│   ├── data_pipeline.py  # 数据处理工具
+|   ├── tools/project_parser.py    # 新增：预解析
+|   ├── websocket_wiki.py          # 新增：LLM 预总结服务
+│   └── requirements.txt  # Python依赖
+│
+├── src/                  # 前端Next.js应用
+│   ├── app/              # Next.js应用目录
+│   │   └── page.tsx      # 主应用页面
+|   |   └── /[ower]/[repo]/page.tsx      #新增：结合调用链+总结文档生成wiki
+│   └── components/       # React组件
+│       └── Mermaid.tsx   # Mermaid图表渲染器
+│
+├── public/               # 静态资源
+├── package.json          # JavaScript依赖
+└── .env                  # 环境变量（需要创建）
 ```
 
 ---
@@ -93,7 +96,7 @@ deepwiki-plus/
 
 ```mermaid
 graph TD
-    A[输入仓库] -->|克隆| B[AST 预解析]
+    A[输入仓库] -->|克隆| B[ 代码预解析]
     B --> C[提取类/函数/import/调用链]
     C --> D[LLM 预总结：模块职责+调用链]
     D --> E[生成 Call-Map™ 图谱]
@@ -124,12 +127,12 @@ graph TD
 
 我们欢迎一切能让“文档不再吃灰”的 PR：
 
-- 新增语言解析器（Rust / Go / Zig …）
+- 新增语言解析器（java / Rust / Go / Zig …）
 - 优化调用链布局算法
 - 更酷炫的 Mermaid 主题
 
 👉 [Discord 社区](https://discord.com/invite/VQMBGR8u5v)  
-👉 [Issue 模板](https://github.com/<你>/deepwiki-plus/issues)
+👉 [Issue 模板](https://github.com/H-Z-Ning/deepwiki-plus/issues)
 
 ---
 
@@ -145,10 +148,13 @@ MIT © DeepWiki-Plus Contributors
 1. 用 `api/config/embedder_openai_compatible.json` 的内容替换 `api/config/embedder.json`。
 2. 在项目根目录的 `.env` 文件中，配置相应的环境变量，例如：
    ```
+   GOOGLE_API_KEY=你的_api_key
    OPENAI_API_KEY=你的_api_key
-   OPENAI_BASE_URL=你的_openai_兼容接口地址
+   OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+   OPENAI_MODEL=qwen-turbo
    ```
-3. 程序会自动用环境变量的值替换 embedder.json 里的占位符。
+3. 在前端选用(1)模型提供商为：Openai；(2)勾选自定义模型；(3)模型选择填写为：qwen-turbo
+4. 程序会自动用环境变量的值替换 embedder.json 里的占位符。
 
 这样即可无缝切换到 OpenAI 兼容的 embedding 服务，无需修改代码。
 
