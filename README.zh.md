@@ -42,12 +42,12 @@ git clone https://github.com/H-Z-Ning/deepwiki-plus.git && cd deepwiki-plus
 
 # 2. 填写密钥（支持多模型）
 vi .env
-   ```
-   GOOGLE_API_KEY=你的_api_key
-   OPENAI_API_KEY=你的_api_key
-   OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
-   OPENAI_MODEL=qwen-turbo
-   ```
+ 
+GOOGLE_API_KEY=你的_api_key
+OPENAI_API_KEY=你的_api_key
+OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+OPENAI_MODEL=qwen-turbo
+
 
 # 3.用 `api/config/embedder_openai_compatible.json` 的内容替换 `api/config/embedder.json`。
 
@@ -141,7 +141,7 @@ graph TD
 MIT © DeepWiki-Plus Contributors  
 “站在巨人肩膀上，再向前一步。”
 
-## 🧩 使用 OpenAI 兼容的 Embedding 模型（如阿里巴巴 Qwen）
+### 🧩 使用 OpenAI 兼容的 Embedding 模型（如阿里巴巴 Qwen）
 
 如果你希望使用 OpenAI 以外、但兼容 OpenAI 接口的 embedding 模型（如阿里巴巴 Qwen），请参考以下步骤：
 
