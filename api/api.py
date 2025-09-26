@@ -12,7 +12,8 @@ import asyncio
 
 # Configure logging
 from api.logging_config import setup_logging
-
+from api.tools.project_parser import save_summarize_json
+from api.tools.project_parser import save_java_callgraph
 setup_logging()
 logger = logging.getLogger(__name__)
 
@@ -238,9 +239,9 @@ async def get_structural_analysis_api(request: Request):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-@app.post("/save-summarize-json")
-async def save_summarize_json_api(request: Request):
-    logger.info("save-summarize-json")
+@app.post("/save-analyze-json")
+async def save_analyze_json_api(request: Request):
+    logger.info("save-analyze-json")
     try:
         data = await request.json()
         repo_type = data.get('type', 'github')
@@ -265,15 +266,17 @@ async def save_summarize_json_api(request: Request):
 
             if not os.path.exists(project_dir):
                 return {"status": "error", "message": f"The project directory does not exist.: {project_dir}"}
-        summarize_text = data.get('summarize_text')
-                # 调用 project_parser.py 中的 parser 方法
-        from api.tools.project_parser import save_summarize_json
-        logger.info("-------------------project_dir--------------------------- %s", project_dir)
+
         try:
+            summarize_text = data.get('summarize_text')
+            # 调用 project_parser.py 中的 parser 方法
+            logger.info("-------------------project_dir--------------------------- %s", project_dir)
             summarize_text = json.loads(summarize_text)  # 字符串 -> Python 对象
+            save_summarize_json(project_dir, summarize_text)
         except json.JSONDecodeError as e:
-            return {"status": "error", "message": f"summarize_text error JSON：{e}"}
-        save_summarize_json(project_dir,summarize_text)  # 传递本地目录路径
+            print(f"summarize_text error JSON：{e}")
+        logger.info("save_java_callgraph")
+        save_java_callgraph(project_dir)
         return {"status": "success"}
     except Exception as e:
         return {"status": "error", "message": str(e)}

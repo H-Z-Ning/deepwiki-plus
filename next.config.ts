@@ -60,8 +60,8 @@ const nextConfig: NextConfig = {
         destination: `${TARGET_SERVER_BASE_URL}/structural-analysis`,
       },
       {
-        source: '/api/save-summarize-json',
-        destination: `${TARGET_SERVER_BASE_URL}/save-summarize-json`,
+        source: '/api/save-analyze-json',
+        destination: `${TARGET_SERVER_BASE_URL}/save-analyze-json`,
       },
       {
         source: '/api/get-structural-analysis',

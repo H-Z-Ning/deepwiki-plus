@@ -416,21 +416,39 @@ This file contains...
         # Only include context if it's not empty
         CONTEXT_START = "<START_OF_CONTEXT>"
         CONTEXT_END = "<END_OF_CONTEXT>"
-        from api.tools.project_parser import get_summarize_json,extract_owner_repo
+        from api.tools.project_parser import get_summarize_json,extract_owner_repo,get_java_callgraph
         import json
         if repo_type == 'local':
             summarize_json = get_summarize_json(repo_name)
+            java_callgraph_json = get_java_callgraph(last_message.content,repo_name)
         else:
             the_repo_name = extract_owner_repo(repo_url)
             summarize_json = get_summarize_json(the_repo_name)
+            java_callgraph_json = get_java_callgraph(last_message.content,repo_name)
         summarize_json_string = json.dumps(summarize_json, ensure_ascii=False, indent=2)
+        java_callgraph_json_string = json.dumps(java_callgraph_json, ensure_ascii=False, indent=2)
         print("====================================》"+summarize_json_string)
+        summarize_text = '';
+        if java_callgraph_json_string.strip():
+            summarize_text =  f"""#You are also skilled at understanding and summarizing project structures, proficient in reading call chains and code comments, and capable of organizing the overall framework and key modules of a project through relevant documentation. The materials are provided in the form of JSON strings:
+            ##A general summary of the project, including the module architecture and basic call chain:
+            {summarize_json_string}
+            ##A JSON file of the Java code call chain. This JSON file consists of two parts: the nodes of the call chain and the edges of the call chain. Please analyze this call chain carefully and refer to it when answering questions:
+            {java_callgraph_json_string}
+            """
+        else:
+            summarize_text =  f"""#You are also skilled at understanding and summarizing project structures, proficient in reading call chains and code comments, and capable of organizing the overall framework and key modules of a project through relevant documentation. The materials are provided in the form of JSON strings:
+             ##A general summary of the project, including the module architecture and basic call chain:
+             {summarize_json_string}
+             """
+
+
         if context_text.strip():
-            prompt += f"{CONTEXT_START}\n{context_text}\n{summarize_json_string}\n{CONTEXT_END}\n\n"
+            prompt += f"{CONTEXT_START}\n{context_text}\n{summarize_text}\n{CONTEXT_END}\n\n"
         else:
             # Add a note that we're skipping RAG due to size constraints or because it's the isolated API
             logger.info("No context available from RAG")
-            prompt += f"{CONTEXT_START}\n{summarize_json_string}\n{CONTEXT_END}\n\n"
+            prompt += f"{CONTEXT_START}\n{summarize_text}\n{CONTEXT_END}\n\n"
             prompt += "<note>Answering without retrieval augmentation.</note>\n\n"
 
         prompt += f"<query>\n{query}\n</query>\n\nAssistant: "

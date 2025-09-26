@@ -1157,7 +1157,7 @@ IMPORTANT:
             Please ensure the analysis is accurate, in-depth, and provides valuable insights.`
         );
         console.log('---------success:----------', projectContext);   
-        await performStructuralAnalysis('/api/save-summarize-json',owner, repo,projectContext);
+        await performStructuralAnalysis('/api/save-analyze-json',owner, repo,projectContext);
       } catch (e) {
         console.error('fail:', e);   
       }

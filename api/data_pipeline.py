@@ -23,7 +23,7 @@ from api.tools.embedder import get_embedder
 logger = logging.getLogger(__name__)
 
 # Maximum token limit for OpenAI embedding models
-MAX_EMBEDDING_TOKENS = 8192
+MAX_EMBEDDING_TOKENS = 819200
 
 def count_tokens(text: str, is_ollama_embedder: bool = None) -> int:
     """
@@ -154,7 +154,7 @@ def read_all_documents(path: str, is_ollama_embedder: bool = None, excluded_dirs
     # File extensions to look for, prioritizing code files
     code_extensions = [".py", ".js", ".ts", ".java", ".cpp", ".c", ".h", ".hpp", ".go", ".rs",
                        ".jsx", ".tsx", ".html", ".css", ".php", ".swift", ".cs"]
-    doc_extensions = [".md", ".txt", ".rst", ".json", ".yaml", ".yml"]
+    doc_extensions = [".md", ".txt", ".rst", ".json", ".yaml", ".yml", ".json"]
 
     # Determine filtering mode: inclusion or exclusion
     use_inclusion_mode = (included_dirs is not None and len(included_dirs) > 0) or (included_files is not None and len(included_files) > 0)

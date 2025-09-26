@@ -10,6 +10,8 @@ import json
 import sys
 from urllib.parse import urlparse
 from typing import Dict, List, Any
+from api.tools.transfor_tokens import similarity_search
+from api.config import get_embedder_config, is_ollama_embedder
 class CodeParser:
     def __init__(self):
 
@@ -1092,6 +1094,8 @@ def extract_key_info(project_data: Dict) -> Dict:
         simplified_data["modules"][file_type]["file_count"] += 1
 
     return simplified_data
+
+
 def get_structural_analysis(project_directory):
     if not os.path.isabs(project_directory):
         project_directory = os.path.abspath(project_directory)
@@ -1101,14 +1105,29 @@ def get_structural_analysis(project_directory):
         exit(1)
     output_extract_filename = f"{os.path.basename(project_directory)}_project_extract_analysis.json"
     output_extract_path = os.path.join(get_analysis_default_root_path(), output_extract_filename)
+
     # 4. 读取并返回内容
     if not os.path.isfile(output_extract_path):
         print(f"Warning: Analysis file '{output_extract_path}' not found, returning empty dict.")
         return {}
 
     try:
-        with open(output_extract_path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        # 检查文件大小
+        file_size = os.path.getsize(output_extract_path)
+        max_size = 400 * 1024  # 400 KiB
+
+        if file_size > max_size:
+            print(f"Warning: Analysis file '{output_extract_path}' is too large ({file_size} bytes), "
+                  f"reading only first {max_size} bytes.")
+            with open(output_extract_path, "r", encoding="utf-8") as f:
+                # 只读取前400KiB内容
+                partial_content = f.read(max_size)
+                # 尝试解析部分内容为JSON
+                data = json.loads(partial_content)
+        else:
+            with open(output_extract_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
         return data
     except (OSError, json.JSONDecodeError) as e:
         print(f"Error reading or parsing '{output_extract_path}': {e}", file=sys.stderr)
@@ -1145,6 +1164,57 @@ def get_summarize_json(repo_name):
     except (OSError, json.JSONDecodeError) as e:
         print(f"Error reading or parsing '{summarize_path}': {e}", file=sys.stderr)
         return {}
+
+
+def save_java_callgraph(project_directory):
+    if not os.path.isabs(project_directory):
+        project_directory = os.path.abspath(project_directory)
+    # 检查目录是否存在
+    if not os.path.isdir(project_directory):
+        print(f"Error: Directory '{project_directory}' does not exist or is not a directory")
+        exit(1)
+    if not os.path.isdir(project_directory):
+        print(f"Error: Directory '{project_directory}' does not exist or is not a directory")
+        exit(1)
+    summarize_filename = f"{os.path.basename(project_directory)}_java_call_chain.json"
+    summarize_path = os.path.join(get_analysis_default_root_path(), summarize_filename)
+    # 确保目标目录存在
+    from api.config import get_embedder_config, is_ollama_embedder
+    os.makedirs(os.path.dirname(summarize_path), exist_ok=True)
+    from api.tools.java_callgraph import analyze_java_callgraph
+    analyze_java_callgraph(project_directory,summarize_path)
+
+
+
+
+def get_java_callgraph(query: str,repo_name: str,):
+    summarize_filename = f"{repo_name}_java_call_chain.json"
+    summarize_path = os.path.join(get_analysis_default_root_path(), summarize_filename)
+    if not os.path.isfile(summarize_path):
+        return {}
+    #获取向量
+    if  os.path.getsize(summarize_path) > 500 * 1024:
+        print("==================get_java_callgraph============="+query)
+        summarize_filename_faiss_store = f"{repo_name}_faiss_store"
+        faiss_store_path = os.path.join(get_analysis_default_root_path(), summarize_filename_faiss_store)
+        the_similarity_search =  similarity_search(summarize_path,query,faiss_store_path,30,is_ollama_embedder())
+
+        return the_similarity_search
+    else:
+        summarize_filename = f"{repo_name}_java_call_chain.json"
+        summarize_path = os.path.join(get_analysis_default_root_path(), summarize_filename)
+
+        if not os.path.isfile(summarize_path):
+            print(f"Warning: Analysis file '{summarize_path}' not found, returning empty dict.")
+            return {}
+
+        try:
+            with open(summarize_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data
+        except (OSError, json.JSONDecodeError) as e:
+            print(f"Error reading or parsing '{summarize_path}': {e}", file=sys.stderr)
+            return {}
 
 def extract_owner_repo(repo_url):
     """
